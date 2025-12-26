@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Patient - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-hospital"></i>
+                </div>
+                <span>My Lab</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i class="fa-solid fa-chart-line icon"></i> Dashboard</a></li>
+                <li><a href="/register" class="active"><i class="fa-solid fa-pen-to-square icon"></i> Register
+                        Patient</a></li>
+                <li><a href="/patients"><i class="fa-solid fa-users icon"></i> Patients</a></li>
+                {% if user.role == 'doctor' %}
+                <li><a href="/reports/pending"><i class="fa-solid fa-clipboard-list icon"></i> Pending Reports</a></li>
+                {% endif %}
+                <li><a href="#logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket icon"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Register Patient</h1>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search...">
+                        <span class="close-icon"><i class="fa-solid fa-xmark"></i></span>
+                    </div>
+                    <div class="user-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <div class="success-message" id="successMsg">
+                    <i class="fa-solid fa-check-circle"></i> Patient registered successfully!
+                </div>
+
+                <form id="registerForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" id="name" placeholder="Enter patient name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="age">Age</label>
+                            <input type="number" id="age" placeholder="Enter age" min="0" max="150" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="SecretarySecretary">Secretary</label>
+                            <select id="SecretarySecretary" required>
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" placeholder="Enter phone number" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bill">Total Payment</label>
+                            <input type="number" id="bill" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-clear">
+                            <i class="fa-solid fa-eraser"></i> Clear
+                        </button>
+                        <button type="submit" class="btn btn-register">
+                            <i class="fa-solid fa-user-plus"></i> Register
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/api-client.js"></script>
+    <script>
+        let currentUser = null;
+        let secretaries = [];
+
+        // Check authentication and load secretaries
+        async function initPage() {
+            try {
+                currentUser = await Utils.requireAuth();
+                if (!currentUser) return;
+
+                // Load secretaries for dropdown
+                await loadSecretaries();
+            } catch (error) {
+                console.error('Page initialization error:', error);
+            }
+        }
+
+        async function loadSecretaries() {
+            try {
+                secretaries = await SecretaryAPI.getAll();
+                const secretarySelect = document.getElementById('SecretarySecretary');
+
+                if (secretarySelect && secretaries.length > 0) {
+                    secretarySelect.innerHTML = '<option value="">Select Secretary</option>';
+                    secretaries.forEach(sec => {
+                        const option = document.createElement('option');
+                        option.value = sec.secertary_id;
+                        option.textContent = sec.name;
+                        secretarySelect.appendChild(option);
+                    });
+
+                    // Auto-select if current user is secretary
+                    if (currentUser && currentUser.role === 'secretary') {
+                        secretarySelect.value = currentUser.user_id;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading secretaries:', error);
+            }
+        }
+
+        // Handle form submission
+        const form = document.getElementById('registerForm');
+        const successMsg = document.getElementById('successMsg');
+
+        if (form) {
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
+
+                try {
+                    // Get form data
+                    const patientData = {
+                        name: document.getElementById('name').value,
+                        age: parseInt(document.getElementById('age').value),
+                        phone: document.getElementById('phone').value,
+                        total_payment: parseFloat(document.getElementById('bill').value) || 0,
+                        secertary_id: parseInt(document.getElementById('SecretarySecretary').value) || currentUser.user_id
+                    };
+
+                    // Submit to API
+                    const response = await PatientAPI.create(patientData);
+
+                    if (response.success) {
+                        // Show success message
+                        successMsg.classList.add('show');
+                        setTimeout(() => {
+                            successMsg.classList.remove('show');
+                        }, 3000);
+
+                        // Reset form
+                        form.reset();
+
+                        // Re-select secretary if auto-selected
+                        if (currentUser && currentUser.role === 'secretary') {
+                            document.getElementById('SecretarySecretary').value = currentUser.user_id;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error registering patient:', error);
+                    alert('Failed to register patient: ' + error.message);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            });
+        }
+
+        // Logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function (e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    try {
+                        await AuthAPI.logout();
+                        window.location.href = '/';
+                    } catch (error) {
+                        window.location.href = '/';
+                    }
+                }
+            });
+        }
+
+        // Initialize page
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+
+</html>

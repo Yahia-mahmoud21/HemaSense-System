@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Reports - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-hospital"></i>
+                </div>
+                <span>My Lab</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i class="fa-solid fa-chart-line icon"></i> Dashboard</a></li>
+                <li><a href="/register"><i class="fa-solid fa-pen-to-square icon"></i> Register Patient</a></li>
+                <li><a href="/patients"><i class="fa-solid fa-users icon"></i> Patients</a></li>
+                <li><a href="/reports/pending" class="active"><i class="fa-solid fa-clipboard-list icon"></i> Pending
+                        Reports</a></li>
+                <li><a href="#logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket icon"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Pending Reports</h1>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search patients...">
+                        <span class="close-icon"><i class="fa-solid fa-xmark"></i></span>
+                    </div>
+                    <div class="user-icon">
+                        <i class="fa-solid fa-user-doctor"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="patients-header">
+                <div class="patients-count">
+                    <span id="pendingCount">0</span> Patients Awaiting Reports
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Phone</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <!-- Data will be loaded from API -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .view-report-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .view-report-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+    </style>
+
+    <script src="/static/api-client.js"></script>
+    <script>
+        let currentUser = null;
+        let pendingReports = [];
+
+        // Initialize page
+        async function initReportList() {
+            try {
+                // Check if user is doctor
+                currentUser = await Utils.requireDoctor();
+                if (!currentUser) return;
+
+                // Load pending reports
+                await loadPendingReports();
+            } catch (error) {
+                console.error('Report list initialization error:', error);
+            }
+        }
+
+        async function loadPendingReports() {
+            try {
+                pendingReports = await ReportAPI.getPending();
+                displayPendingReports();
+            } catch (error) {
+                console.error('Error loading pending reports:', error);
+                Utils.showError('Failed to load pending reports');
+            }
+        }
+
+        function displayPendingReports() {
+            const tbody = document.getElementById('reportTableBody');
+            const pendingCount = document.getElementById('pendingCount');
+
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (pendingCount) {
+                pendingCount.textContent = pendingReports.length;
+            }
+
+            if (pendingReports.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <i class="fa-solid fa-check-circle" style="font-size: 48px; color: var(--success-color); margin-bottom: 10px; display: block;"></i>
+                            No pending reports - All patients have reports!
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            pendingReports.forEach(patient => {
+                const row = document.createElement('tr');
+                const patientId = String(patient.patient_id).padStart(3, '0');
+                const registeredDate = patient.now_date ? new Date(patient.now_date).toLocaleDateString() : '-';
+
+                row.innerHTML = `
+                    <td>#${patientId}</td>
+                    <td>${patient.name}</td>
+                    <td>${patient.age}</td>
+                    <td>${patient.phone}</td>
+                    <td>${registeredDate}</td>
+                    <td>
+                        <a href="/reports/create/${patient.patient_id}" class="view-report-btn">
+                            <i class="fa-solid fa-file-signature"></i>
+                            <span>Create Report</span>
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function (e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('#reportTableBody tr');
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async function (e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await AuthAPI.logout();
+                    window.location.href = '/';
+                } catch (error) {
+                    window.location.href = '/';
+                }
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', initReportList);
+    </script>
+</body>
+
+</html>
+

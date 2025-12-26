@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-hospital"></i>
+                </div>
+                <span>My Lab</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard" class="active"><i class="fa-solid fa-chart-line icon"></i> Dashboard</a>
+                </li>
+                <li><a href="/register"><i class="fa-solid fa-pen-to-square icon"></i> Register Patient</a></li>
+                <li><a href="/patients"><i class="fa-solid fa-users icon"></i> Patients</a></li>
+                {% if user.role == 'doctor' %}
+                <li><a href="/reports/pending"><i class="fa-solid fa-clipboard-list icon"></i> Pending Reports</a></li>
+                {% endif %}
+                <li><a href="#logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket icon"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Dashboard</h1>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search...">
+                        <span class="close-icon"><i class="fa-solid fa-xmark"></i></span>
+                    </div>
+                    <div class="user-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: var(--primary-light); color: var(--primary-color);">
+                        <i class="fa-solid fa-users-medical"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalPatients">0</div>
+                        <div class="stat-label">Total Patients</div>
+                    </div>
+                </div>
+
+                <!-- <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #fef3c7; color: #b45309;">
+                        <i class="fa-solid fa-flask-vial"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalTests">0</div>
+                        <div class="stat-label">Total Tests</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #dcfce7; color: #15803d;">
+                        <i class="fa-solid fa-file-medical"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="thisWeek">0</div>
+                        <div class="stat-label">Samples this Week</div>
+                    </div>
+                </div> -->
+            </div>
+
+            <!-- Charts Section -->
+            <!-- <div class="charts-section">
+                <div class="chart-container">
+                    <h3><i class="fa-solid fa-chart-area"></i> Patient Statistics</h3>
+                    <canvas id="lineChart"></canvas>
+                </div>
+
+                <div class="chart-container donut">
+                    <h3><i class="fa-solid fa-chart-pie"></i> Test Distribution</h3>
+                    <div class="donut-wrapper">
+                        <canvas id="donutChart"></canvas>
+                    </div>
+                </div>
+            </div> -->
+
+            <!-- Latest Patients Table -->
+            <div class="latest-section">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Latest Registered Patients</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Test Type</th>
+                                <th>Phone Number</th>
+                            </tr>
+                        </thead>
+                        <tbody id="latestPatientsTable">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                                    <i class="fa-solid fa-inbox"
+                                        style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
+                                    No patients registered yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/api-client.js"></script>
+    <script src="/static/script.js"></script>
+    <script>
+        // Check authentication on page load
+        let currentUser = null;
+
+        async function initDashboard() {
+            try {
+                // Check if user is authenticated
+                currentUser = await Utils.requireAuth();
+                if (!currentUser) return;
+
+                // Load dashboard stats
+                await loadDashboardStats();
+
+                // Load latest patients
+                await loadLatestPatients();
+            } catch (error) {
+                console.error('Dashboard initialization error:', error);
+                Utils.showError('Failed to load dashboard data');
+            }
+        }
+
+        async function loadDashboardStats() {
+            try {
+                const stats = await DashboardAPI.getStats();
+
+                // Update stat cards
+                document.getElementById('totalPatients').textContent = stats.total_patients || 0;
+                document.getElementById('totalTests').textContent = stats.total_reports || 0;
+                document.getElementById('thisWeek').textContent = stats.patients_this_week || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadLatestPatients() {
+            try {
+                const patients = await PatientAPI.getAll();
+                const tbody = document.getElementById('latestPatientsTable');
+
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+
+                // Get last 3 patients
+                const latestPatients = patients.slice(-3).reverse();
+
+                if (latestPatients.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                                <i class="fa-solid fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
+                                No patients registered yet
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                latestPatients.forEach(patient => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${patient.name}</td>
+                        <td>${patient.age}</td>
+                        <td>CBC Test</td>
+                        <td>${patient.phone}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Initialize charts with real data
+                initializeCharts(patients);
+            } catch (error) {
+                console.error('Error loading patients:', error);
+            }
+        }
+
+        function initializeCharts(patients) {
+            const lineChartEl = document.getElementById('lineChart');
+            const donutChartEl = document.getElementById('donutChart');
+
+            if (!lineChartEl || !donutChartEl) return;
+
+            // Line Chart - Patient growth over time
+            const lineCtx = lineChartEl.getContext('2d');
+            new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+                    datasets: [{
+                        label: 'Patients',
+                        data: [250, 600, 400, 150, 900, 300, 100, 800, 200, patients.length],
+                        borderColor: '#9c27b0',
+                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#9c27b0'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1000
+                        }
+                    }
+                }
+            });
+
+            // Donut Chart
+            const donutCtx = donutChartEl.getContext('2d');
+            new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tests', 'Pending', 'Completed'],
+                    datasets: [{
+                        data: [1000, 500, 300, 200],
+                        backgroundColor: [
+                            '#cddc39',
+                            '#ff9800',
+                            '#e91e63',
+                            '#2196f3'
+                        ],
+                        borderColor: 'white',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Logout with API
+        document.getElementById('logoutBtn').addEventListener('click', async function (e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await AuthAPI.logout();
+                    window.location.href = '/';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    window.location.href = '/';
+                }
+            }
+        });
+
+        // Initialize dashboard on page load
+        window.addEventListener('load', initDashboard);
+    </script>
+</body>
+
+</html>

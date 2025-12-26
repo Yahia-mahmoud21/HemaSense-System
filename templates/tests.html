@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tests - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span>My Lab</span>
+                <span class="chevron">&laquo;</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard" class="active"><span class="icon">📊</span> Dashboard</a></li>
+                <li><a href="/register"><span class="icon">📝</span> Register Patient</a></li>
+                <li><a href="/patients"><span class="icon">👥</span> Patients</a></li>
+                <li><a href="/samples"><span class="icon">🧪</span> Samples</a></li>
+                <li><a href="/tests"><span class="icon">📋</span> Tests</a></li>
+                <li><a href="/doctors"><span class="icon">👨‍⚕️</span> Doctor</a></li>
+                <li><a href="#logout" id="logoutBtn"><span class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Tests</h1>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search">
+                        <span class="close-icon">&times;</span>
+                    </div>
+                    <div class="user-icon">👤</div>
+                </div>
+            </div>
+
+            <div class="patients-header">
+                <div></div>
+                <button class="add-btn" id="addTestBtn">Add New Test</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Test ID</th>
+                            <th>Test Name</th>
+                            <th>Patient Name</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="testsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Test Modal -->
+    <div id="testModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeTestModal">&times;</span>
+            <h2>Add New Test</h2>
+            <form id="testForm">
+                <div class="form-group">
+                    <label for="testName">Test Name</label>
+                    <input type="text" id="testName" required>
+                </div>
+                <div class="form-group">
+                    <label for="testPatient">Patient Name</label>
+                    <input type="text" id="testPatient" required>
+                </div>
+                <div class="form-group">
+                    <label for="testPrice">Price</label>
+                    <input type="number" id="testPrice" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="testStatus">Status</label>
+                    <select id="testStatus" required>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-clear" id="cancelTestBtn">Cancel</button>
+                    <button type="submit" class="btn btn-register">Save Test</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
+

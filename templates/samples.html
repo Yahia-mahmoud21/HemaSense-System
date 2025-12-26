@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samples - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span>My Lab</span>
+                <span class="chevron">&laquo;</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard" class="active"><span class="icon">📊</span> Dashboard</a></li>
+                <li><a href="/register"><span class="icon">📝</span> Register Patient</a></li>
+                <li><a href="/patients"><span class="icon">👥</span> Patients</a></li>
+                <li><a href="/samples"><span class="icon">🧪</span> Samples</a></li>
+                <li><a href="/tests"><span class="icon">📋</span> Tests</a></li>
+                <li><a href="/doctors"><span class="icon">👨‍⚕️</span> Doctor</a></li>
+                <li><a href="#logout" id="logoutBtn"><span class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Samples</h1>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search">
+                        <span class="close-icon">&times;</span>
+                    </div>
+                    <div class="user-icon">👤</div>
+                </div>
+            </div>
+
+            <div class="patients-header">
+                <div></div>
+                <button class="add-btn" id="addSampleBtn">Add New Sample</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sample ID</th>
+                            <th>Sample Type</th>
+                            <th>Patient Name</th>
+                            <th>Collection Date</th>
+                            <th>Status</th>
+                            <th>Quantity</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="samplesTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Sample Modal -->
+    <div id="sampleModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeSampleModal">&times;</span>
+            <h2>Add New Sample</h2>
+            <form id="sampleForm">
+                <div class="form-group">
+                    <label for="sampleType">Sample Type</label>
+                    <input type="text" id="sampleType" placeholder="Blood, Urine, etc." required>
+                </div>
+                <div class="form-group">
+                    <label for="samplePatient">Patient Name</label>
+                    <input type="text" id="samplePatient" required>
+                </div>
+                <div class="form-group">
+                    <label for="sampleDate">Collection Date</label>
+                    <input type="date" id="sampleDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="sampleStatus">Status</label>
+                    <select id="sampleStatus" required>
+                        <option value="Collected">Collected</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Stored">Stored</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sampleQuantity">Quantity (ml)</label>
+                    <input type="number" id="sampleQuantity" step="0.01" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-clear" id="cancelSampleBtn">Cancel</button>
+                    <button type="submit" class="btn btn-register">Save Sample</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
+

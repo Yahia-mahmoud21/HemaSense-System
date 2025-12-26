@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patients - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Action Button Colors */
+        .action-links a {
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-links a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* View Button - Blue */
+        .action-links a[title="View details"] {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .action-links a[title="View details"]:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        /* Edit Button - Orange */
+        .action-links a[title="Edit patient"] {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .action-links a[title="Edit patient"]:hover {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        /* Delete Button - Red */
+        .action-links a.delete-btn {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .action-links a.delete-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Payment Button - Green */
+        .action-links a.payment-btn {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .action-links a.payment-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        /* View Patient Modal Styles */
+        .view-patient-modal .patient-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .view-patient-modal .detail-item {
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .view-patient-modal .detail-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .view-patient-modal .detail-value {
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Edit Patient Modal Styles */
+        .edit-patient-modal .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .edit-patient-modal .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .edit-patient-modal .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Modal Base Styles - Hide by default */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal .close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+            transition: color 0.2s;
+        }
+
+        .modal .close:hover {
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-hospital"></i>
+                </div>
+                <span>My Lab</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i class="fa-solid fa-chart-line icon"></i> Dashboard</a></li>
+                <li><a href="/register"><i class="fa-solid fa-pen-to-square icon"></i> Register Patient</a></li>
+                <li><a href="/patients" class="active"><i class="fa-solid fa-users icon"></i> Patients</a></li>
+                {% if user.role == 'doctor' %}
+                <li><a href="/reports/pending"><i class="fa-solid fa-clipboard-list icon"></i> Pending Reports</a></li>
+                {% endif %}
+                <li><a href="#logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket icon"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Patients</h1>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search patients...">
+                        <span class="close-icon"><i class="fa-solid fa-xmark"></i></span>
+                    </div>
+                    <div class="user-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="patients-header">
+                <div class="patients-count">
+                    <span id="patientsCount">0</span> Patients
+                </div>
+                <button class="add-btn" id="addPatientBtn">
+                    <i class="fa-solid fa-plus"></i> Add New Patient
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Phone</th>
+                            <th>Secretary</th>
+                            <th>Total Payment</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->  
+    <div id="paymentModal" class="modal">
+        <div class="modal-content payment-modal">
+            <span class="close" id="closePaymentModal"><i class="fa-solid fa-xmark"></i></span>
+            <h2><i class="fa-solid fa-credit-card" style="color: var(--primary-color);"></i> Payment Details</h2>
+
+            <div class="payment-info">
+                <div class="patient-info-card">
+                    <div class="info-row">
+                        <span class="info-label">Patient Name:</span>
+                        <span class="info-value" id="paymentPatientName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Patient ID:</span>
+                        <span class="info-value" id="paymentPatientId">-</span>
+                    </div>
+                </div>
+
+                <div class="payment-summary">
+                    <div class="payment-row total">
+                        <span class="payment-label">Total Cost:</span>
+                        <span class="payment-value" id="totalCost">$0.00</span>
+                    </div>
+                    <div class="payment-row paid">
+                        <span class="payment-label">Paid Amount:</span>
+                        <span class="payment-value" id="paidAmount">$0.00</span>
+                    </div>
+                    <div class="payment-divider"></div>
+                    <div class="payment-row remaining">
+                        <span class="payment-label">Remaining:</span>
+                        <span class="payment-value highlight" id="remainingAmount">$0.00</span>
+                    </div>
+                </div>
+
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label for="paymentInput">Add Payment</label>
+                        <input type="number" id="paymentInput" placeholder="Enter amount" step="0.01" min="0">
+                        <div id="paymentError" class="error-text"
+                            style="color: #ef4444; font-size: 13px; margin-top: 5px; display: none;"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-clear" id="cancelPaymentBtn">Cancel</button>
+                        <button type="submit" class="btn btn-register">
+                            <i class="fa-solid fa-check"></i> Add Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Patient Modal -->
+    <div id="viewPatientModal" class="modal">
+        <div class="modal-content view-patient-modal">
+            <span class="close" id="closeViewModal"><i class="fa-solid fa-xmark"></i></span>
+            <h2><i class="fa-solid fa-user-circle" style="color: var(--primary-color);"></i> Patient Information</h2>
+
+            <div class="patient-details">
+                <div class="detail-item">
+                    <div class="detail-label">Patient ID</div>
+                    <div class="detail-value" id="viewPatientId">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Full Name</div>
+                    <div class="detail-value" id="viewPatientName">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Age</div>
+                    <div class="detail-value" id="viewPatientAge">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value" id="viewPatientPhone">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Secretary</div>
+                    <div class="detail-value" id="viewPatientSecretary">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value" id="viewPatientStatus">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Total Cost</div>
+                    <div class="detail-value" id="viewPatientTotal">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Paid Amount</div>
+                    <div class="detail-value" id="viewPatientPaid">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Remaining Balance</div>
+                    <div class="detail-value" id="viewPatientRemaining" style="color: #ef4444; font-weight: 700;">-
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Registration Date</div>
+                    <div class="detail-value" id="viewPatientDate">-</div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-register" id="closeViewBtn">
+                    <i class="fa-solid fa-check"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Patient Modal -->
+    <div id="editPatientModal" class="modal">
+        <div class="modal-content edit-patient-modal">
+            <span class="close" id="closeEditModal"><i class="fa-solid fa-xmark"></i></span>
+            <h2><i class="fa-solid fa-pen-to-square" style="color: var(--primary-color);"></i> Edit Patient Information
+            </h2>
+
+            <form id="editPatientForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editPatientName">Full Name</label>
+                        <input type="text" id="editPatientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPatientAge">Age</label>
+                        <input type="number" id="editPatientAge" min="1" max="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPatientPhone">Phone Number</label>
+                        <input type="tel" id="editPatientPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPatientSecretary">Secretary</label>
+                        <input type="text" id="editPatientSecretary">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPatientTotal">Total Cost ($)</label>
+                        <input type="number" id="editPatientTotal" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPatientStatus">Status</label>
+                        <select id="editPatientStatus">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-clear" id="cancelEditBtn">Cancel</button>
+                    <button type="submit" class="btn btn-register">
+                        <i class="fa-solid fa-check"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/api-client.js"></script>
+    <script>
+
+
+// Patients Page - API Integration
+// This script handles the patients page with backend API integration
+
+let currentUser = null;
+let allPatients = [];
+
+// Initialize patients page
+async function initPatientsPage() {
+    try {
+        // Check authentication
+        currentUser = await Utils.requireAuth();
+        if (!currentUser) return;
+
+        // Load all patients
+        await loadPatients();
+    } catch (error) {
+        console.error('Patients page initialization error:', error);
+        Utils.showError('Failed to load patients');
+    }
+}
+
+// Load patients from API
+async function loadPatients() {
+    try {
+        allPatients = await PatientAPI.getAll();
+        displayPatients(allPatients);
+    } catch (error) {
+        console.error('Error loading patients:', error);
+        Utils.showError('Failed to load patients');
+    }
+}
+
+// Display patients in table
+function displayPatients(patientsToShow) {
+    const patientTableBody = document.getElementById('patientTableBody');
+    if (!patientTableBody) return;
+
+    patientTableBody.innerHTML = '';
+
+    // Update patients count
+    const patientsCountEl = document.getElementById('patientsCount');
+    if (patientsCountEl) {
+        patientsCountEl.textContent = patientsToShow.length;
+    }
+
+    if (patientsToShow.length === 0) {
+        patientTableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No patients found</td></tr>';
+        return;
+    }
+
+    patientsToShow.forEach((patient) => {
+        const row = document.createElement('tr');
+        const patientId = String(patient.patient_id).padStart(3, '0');
+        const registeredDate = patient.now_date ? new Date(patient.now_date).toLocaleDateString() : '-';
+        const remaining = patient.total_payment - (patient.paid_amount || 0);
+
+        row.innerHTML = `
+            <td>#${patientId}</td>
+            <td>${patient.name}</td>
+            <td>${patient.age}</td>
+            <td>${patient.phone}</td>
+            <td> ${patient.secretary_name}</td>
+            <td>$${parseFloat(patient.total_payment).toFixed(2)}</td>
+            <td>${registeredDate}</td>
+            <td>
+                <div class="action-links">
+                    <a href="#" onclick="viewPatient(${patient.patient_id}); return false;" title="View details"><i class="fa-solid fa-eye"></i></a>
+                    <a href="#" onclick="editPatient(${patient.patient_id}); return false;" title="Edit patient"><i class="fa-solid fa-pen-to-square"></i></a>
+                    <a href="#" onclick="deletePatient(${patient.patient_id}); return false;" title="Delete patient" class="delete-btn"><i class="fa-solid fa-trash"></i></a>
+                    <a href="#" onclick="openPaymentModal(${patient.patient_id}); return false;" title="Add Payment" class="payment-btn"><i class="fa-solid fa-credit-card"></i></a>
+                </div>
+            </td>
+        `;
+        patientTableBody.appendChild(row);
+    });
+}
+
+// Search functionality
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const closeIcon = document.querySelector('.close-icon');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            if (searchTerm === '') {
+                displayPatients(allPatients);
+            } else {
+                const filtered = allPatients.filter(p =>
+                    p.name.toLowerCase().includes(searchTerm) ||
+                    p.phone.includes(searchTerm)
+                );
+                displayPatients(filtered);
+            }
+        });
+
+        if (closeIcon) {
+            closeIcon.addEventListener('click', function () {
+                searchInput.value = '';
+                displayPatients(allPatients);
+            });
+        }
+    }
+}
+
+// View patient details
+window.viewPatient = async function (patientId) {
+    try {
+        const patient = await PatientAPI.getById(patientId);
+        const remaining = patient.total_payment - (patient.paid_amount || 0);
+        const patientIdStr = String(patient.patient_id).padStart(3, '0');
+        const registeredDate = patient.now_date ? new Date(patient.now_date).toLocaleDateString() : '-';
+
+        // Populate modal
+        document.getElementById('viewPatientId').textContent = `#${patientIdStr}`;
+        document.getElementById('viewPatientName').textContent = patient.name;
+        document.getElementById('viewPatientAge').textContent = patient.age + ' years';
+        document.getElementById('viewPatientPhone').textContent = patient.phone;
+        document.getElementById('viewPatientSecretary').textContent = `Secretary ${patient.secertary_id}`;
+        document.getElementById('viewPatientStatus').textContent = 'Active';
+        document.getElementById('viewPatientTotal').textContent = `$${parseFloat(patient.total_payment).toFixed(2)}`;
+        document.getElementById('viewPatientPaid').textContent = `$${parseFloat(patient.paid_amount || 0).toFixed(2)}`;
+        document.getElementById('viewPatientRemaining').textContent = `$${parseFloat(remaining).toFixed(2)}`;
+        document.getElementById('viewPatientDate').textContent = registeredDate;
+
+        // Show modal
+        document.getElementById('viewPatientModal').classList.add('show');
+    } catch (error) {
+        console.error('Error loading patient:', error);
+        Utils.showError('Failed to load patient details');
+    }
+};
+
+// Edit patient
+let currentEditPatientId = null;
+
+window.editPatient = async function (patientId) {
+    try {
+        currentEditPatientId = patientId;
+        const patient = await PatientAPI.getById(patientId);
+
+        // Populate form
+        document.getElementById('editPatientName').value = patient.name;
+        document.getElementById('editPatientAge').value = patient.age;
+        document.getElementById('editPatientPhone').value = patient.phone;
+        document.getElementById('editPatientSecretary').value = `Secretary ${patient.secertary_id}`;
+        document.getElementById('editPatientTotal').value = parseFloat(patient.total_payment).toFixed(2);
+        document.getElementById('editPatientStatus').value = 'Active';
+
+        // Show modal
+        document.getElementById('editPatientModal').classList.add('show');
+    } catch (error) {
+        console.error('Error loading patient:', error);
+        Utils.showError('Failed to load patient for editing');
+    }
+};
+
+// Save edited patient
+function setupEditForm() {
+    const editPatientForm = document.getElementById('editPatientForm');
+    if (editPatientForm) {
+        editPatientForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            if (currentEditPatientId === null) return;
+
+            try {
+                const updatedData = {
+                    name: document.getElementById('editPatientName').value,
+                    age: parseInt(document.getElementById('editPatientAge').value),
+                    phone: document.getElementById('editPatientPhone').value,
+                    total_payment: parseFloat(document.getElementById('editPatientTotal').value)
+                };
+
+                await PatientAPI.update(currentEditPatientId, updatedData);
+
+                // Close modal
+                document.getElementById('editPatientModal').classList.remove('show');
+                currentEditPatientId = null;
+
+                // Reload patients
+                await loadPatients();
+
+                alert('Patient information updated successfully!');
+            } catch (error) {
+                console.error('Error updating patient:', error);
+                Utils.showError('Failed to update patient');
+            }
+        });
+    }
+}
+
+// Delete patient
+window.deletePatient = async function (patientId) {
+    if (confirm('Are you sure you want to delete this patient?')) {
+        try {
+            await PatientAPI.delete(patientId);
+            await loadPatients();
+            alert('Patient deleted successfully!');
+        } catch (error) {
+            console.error('Error deleting patient:', error);
+            Utils.showError('Failed to delete patient');
+        }
+    }
+};
+
+// Payment modal
+let currentPaymentPatientId = null;
+
+window.openPaymentModal = async function (patientId) {
+    try {
+        currentPaymentPatientId = patientId;
+        const patient = await PatientAPI.getById(patientId);
+        const paymentModal = document.getElementById('paymentModal');
+
+        const remaining = patient.total_payment - (patient.paid_amount || 0);
+
+        // Update modal content
+        document.getElementById('paymentPatientName').textContent = patient.name;
+        document.getElementById('paymentPatientId').textContent = String(patient.patient_id).padStart(3, '0');
+        document.getElementById('totalCost').textContent = `$${parseFloat(patient.total_payment).toFixed(2)}`;
+        document.getElementById('paidAmount').textContent = `$${parseFloat(patient.paid_amount || 0).toFixed(2)}`;
+        document.getElementById('remainingAmount').textContent = `$${parseFloat(remaining).toFixed(2)}`;
+
+        // Show modal
+        document.getElementById('paymentError').style.display = 'none';
+        paymentModal.classList.add('show');
+    } catch (error) {
+        console.error('Error loading patient for payment:', error);
+        Utils.showError('Failed to load patient payment details');
+    }
+};
+
+// Handle payment form submission
+function setupPaymentForm() {
+    const paymentForm = document.getElementById('paymentForm');
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            if (currentPaymentPatientId === null) return;
+
+            const paymentInput = parseFloat(document.getElementById('paymentInput').value);
+            const errorDiv = document.getElementById('paymentError');
+            errorDiv.style.display = 'none';
+
+            if (!paymentInput || paymentInput <= 0) {
+                errorDiv.textContent = 'Please enter a valid payment amount!';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await PatientAPI.addPayment(currentPaymentPatientId, paymentInput);
+
+                // Update modal display
+                const patient = await PatientAPI.getById(currentPaymentPatientId);
+                const newRemaining = patient.total_payment - (patient.paid_amount || 0);
+
+                document.getElementById('paidAmount').textContent = `$${parseFloat(patient.paid_amount || 0).toFixed(2)}`;
+                document.getElementById('remainingAmount').textContent = `$${parseFloat(newRemaining).toFixed(2)}`;
+
+                // Clear input
+                document.getElementById('paymentInput').value = '';
+
+                // Reload table
+                await loadPatients();
+
+                alert(`Payment of $${paymentInput.toFixed(2)} added successfully!\nRemaining balance: $${newRemaining.toFixed(2)}`);
+            } catch (error) {
+                console.error('Error adding payment:', error);
+                errorDiv.textContent = error.message || 'Failed to add payment';
+                errorDiv.style.display = 'block';
+            }
+        });
+    }
+}
+
+// Setup modal close handlers
+function setupModals() {
+    // View modal
+    const closeViewModal = document.getElementById('closeViewModal');
+    const closeViewBtn = document.getElementById('closeViewBtn');
+    if (closeViewModal) {
+        closeViewModal.addEventListener('click', function () {
+            document.getElementById('viewPatientModal').classList.remove('show');
+        });
+    }
+    if (closeViewBtn) {
+        closeViewBtn.addEventListener('click', function () {
+            document.getElementById('viewPatientModal').classList.remove('show');
+        });
+    }
+
+    // Edit modal
+    const closeEditModal = document.getElementById('closeEditModal');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    if (closeEditModal) {
+        closeEditModal.addEventListener('click', function () {
+            document.getElementById('editPatientModal').classList.remove('show');
+            currentEditPatientId = null;
+        });
+    }
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', function () {
+            document.getElementById('editPatientModal').classList.remove('show');
+            currentEditPatientId = null;
+        });
+    }
+
+    // Payment modal
+    const closePaymentModal = document.getElementById('closePaymentModal');
+    const cancelPaymentBtn = document.getElementById('cancelPaymentBtn');
+    if (closePaymentModal) {
+        closePaymentModal.addEventListener('click', function () {
+            document.getElementById('paymentModal').classList.remove('show');
+            document.getElementById('paymentInput').value = '';
+        });
+    }
+    if (cancelPaymentBtn) {
+        cancelPaymentBtn.addEventListener('click', function () {
+            document.getElementById('paymentModal').classList.remove('show');
+            document.getElementById('paymentInput').value = '';
+        });
+    }
+}
+
+// Add new patient button
+function setupAddPatientBtn() {
+    const addPatientBtn = document.getElementById('addPatientBtn');
+    if (addPatientBtn) {
+        addPatientBtn.addEventListener('click', function () {
+            window.location.href = '/register';
+        });
+    }
+}
+
+// Logout
+function setupLogout() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function (e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await AuthAPI.logout();
+                    window.location.href = '/';
+                } catch (error) {
+                    window.location.href = '/';
+                }
+            }
+        });
+    }
+}
+
+// Initialize on page load
+window.addEventListener('load', async function () {
+    await initPatientsPage();
+    setupSearch();
+    setupEditForm();
+    setupPaymentForm();
+    setupModals();
+    setupAddPatientBtn();
+    setupLogout();
+});
+
+    </script>
+
+</body>
+
+</html>

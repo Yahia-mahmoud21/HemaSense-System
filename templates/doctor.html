@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctors - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span>My Lab</span>
+                <span class="chevron">&laquo;</span>
+            </div>
+           <ul class="sidebar-menu">
+                <li><a href="/dashboard" class="active"><span class="icon">📊</span> Dashboard</a></li>
+                <li><a href="/register"><span class="icon">📝</span> Register Patient</a></li>
+                <li><a href="/patients"><span class="icon">👥</span> Patients</a></li>
+                <li><a href="/samples"><span class="icon">🧪</span> Samples</a></li>
+                <li><a href="/tests"><span class="icon">📋</span> Tests</a></li>
+                <li><a href="/doctors"><span class="icon">👨‍⚕️</span> Doctor</a></li>
+                <li><a href="#logout" id="logoutBtn"><span class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Doctors</h1>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search">
+                        <span class="close-icon">&times;</span>
+                    </div>
+                    <div class="user-icon">👤</div>
+                </div>
+            </div>
+
+            <div class="patients-header">
+                <div></div>
+                <button class="add-btn" id="addDoctorBtn">Add New Doctor</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Doctor ID</th>
+                            <th>Name</th>
+                            <th>Specialization</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="doctorsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Doctor Modal -->
+    <div id="doctorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeDoctorModal">&times;</span>
+            <h2>Add New Doctor</h2>
+            <form id="doctorForm">
+                <div class="form-group">
+                    <label for="doctorName">Name</label>
+                    <input type="text" id="doctorName" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctorSpecialization">Specialization</label>
+                    <input type="text" id="doctorSpecialization" placeholder="e.g., Cardiologist" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctorPhone">Phone</label>
+                    <input type="tel" id="doctorPhone" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctorEmail">Email</label>
+                    <input type="email" id="doctorEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctorStatus">Status</label>
+                    <select id="doctorStatus" required>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-clear" id="cancelDoctorBtn">Cancel</button>
+                    <button type="submit" class="btn btn-register">Save Doctor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
+

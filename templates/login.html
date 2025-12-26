@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - My Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 50px 60px;
+            box-shadow: var(--shadow-soft);
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-icon {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 16px;
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .login-form {
+            margin-bottom: 24px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary-color);
+        }
+
+        .error-message {
+            display: none;
+            background-color: var(--danger-color);
+            color: white;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            background-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+            gap: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .login-card {
+                padding: 40px 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container" id="loginContainer">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon" id="loginIcon">
+                    <i class="fa-solid fa-user-pen"></i>
+                </div>
+                <h1>Welcome Back</h1>
+                <span class="role-badge" id="roleBadge">Secretary</span>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                Invalid username or password
+            </div>
+
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                        <i class="fa-solid fa-eye password-toggle" id="passwordToggle"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <span>Login</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <a href="home.html" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back to Home</span>
+            </a>
+        </div>
+    </div>
+
+    <script src="/static/api-client.js"></script>
+    <script>
+        // Get role from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const role = urlParams.get('role') || 'secretary';
+
+        // Update UI based on role
+        if (role === 'doctor') {
+            document.getElementById('loginIcon').innerHTML = '<i class="fa-solid fa-user-doctor"></i>';
+            document.getElementById('roleBadge').textContent = 'Doctor';
+        }
+
+        // Password toggle
+        document.getElementById('passwordToggle').addEventListener('click', function () {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+
+            if (type === 'password') {
+                this.classList.remove('fa-eye-slash');
+                this.classList.add('fa-eye');
+            } else {
+                this.classList.remove('fa-eye');
+                this.classList.add('fa-eye-slash');
+            }
+        });
+
+        // Form submission with API integration
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const loginBtn = document.querySelector('.login-btn');
+
+            // Hide previous error
+            errorMessage.classList.remove('show');
+
+            // Disable button during login
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span>Logging in...</span><i class="fa-solid fa-spinner fa-spin"></i>';
+
+            try {
+                // Call login API
+                const response = await AuthAPI.login(username, password, role);
+
+                if (response.success) {
+                    // Redirect based on role
+                    if (response.user.role === 'secretary') {
+                        window.location.href = '/dashboard';
+                    } else if (response.user.role === 'doctor') {
+                        window.location.href = '/reports/pending';
+                    }
+                } else {
+                    throw new Error('Login failed');
+                }
+            } catch (error) {
+                // Show error message
+                errorMessage.textContent = error.message || 'Invalid username or password';
+                errorMessage.classList.add('show');
+
+                // Re-enable button
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<span>Login</span><i class="fa-solid fa-arrow-right"></i>';
+            }
+        });
+    </script>
+</body>
+
+</html>
+
