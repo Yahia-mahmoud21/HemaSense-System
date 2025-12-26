@@ -1,3 +1,25 @@
+
+# 🩸 HemaSense System
+
+An intelligent CBC analysis system using Machine Learning and Medical LLM
+to predict anemia levels and generate smart medical reports.
+
+---
+
+##  System Overview
+![System Overview](Photos/main_photo.png)
+
+---
+
+##  Medical LLM Module
+![Medical LLM](Photos/LLM.png)
+
+---
+
+##  Machine Learning Model
+![Decision Tree Model](Photos/ML.png)
+
+
 ## Team members :
 - Mohammed Abdel-Samie
 - Yahia Mahmoud Farouk
