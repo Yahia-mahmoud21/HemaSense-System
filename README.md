@@ -19,6 +19,11 @@ to predict anemia levels and generate smart medical reports.
 ##  Machine Learning Model
 ![Decision Tree Model](Photos/ML.png)
 
+---
+
+##  Report preview 
+![Report preview](Photos/print.png)
+
 
 ## Team members :
 - Mohammed Abdel-Samie
