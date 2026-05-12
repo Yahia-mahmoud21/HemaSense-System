@@ -1,0 +1,118 @@
+@using HemaSense.Models
+@model IEnumerable<Patient>
+@{
+    ViewData["Title"] = "Patients";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user = ViewBag.User as SessionUser;
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/app.css" />
+}
+
+<div class="container">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Patients</h1>
+            <div class="header-right">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search patients...">
+                    <span class="close-icon" onclick="clearSearch()"><i class="fa-solid fa-xmark"></i></span>
+                </div>
+                <div class="user-icon"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert-success"><i class="fa-solid fa-check-circle"></i> @TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert-danger"><i class="fa-solid fa-triangle-exclamation"></i> @TempData["Error"]</div>
+        }
+
+        <div class="patients-header">
+            <div class="patients-count"><span id="patientsCount">@Model.Count()</span> Patients</div>
+            <a href="@Url.Action("Register")" class="add-btn">
+                <i class="fa-solid fa-plus"></i> Add New Patient
+            </a>
+        </div>
+
+        <div class="table-container">
+            <table id="patientsTable">
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Phone</th>
+                        <th>Secretary</th>
+                        <th>Total Payment</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr class="patient-row" data-name="@p.Name.ToLower()" data-phone="@p.Phone">
+                            <td>#@p.PatientId.ToString("D3")</td>
+                            <td>@p.Name</td>
+                            <td>@p.Age</td>
+                            <td>@p.Phone</td>
+                            <td>@(p.SecretaryName ?? "-")</td>
+                            <td>$@p.TotalPayment.ToString("F2")</td>
+                            <td>@(p.NowDate.HasValue ? p.NowDate.Value.ToString("MMM dd, yyyy") : "-")</td>
+                            <td>
+                                <div class="action-links">
+                                    <a href="@Url.Action("Details", new{id=p.PatientId})" title="View details" class="action-view">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("Edit", new{id=p.PatientId})" title="Edit patient" class="action-edit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    <a href="@Url.Action("Payment", new{id=p.PatientId})" title="Payment" class="action-payment">
+                                        <i class="fa-solid fa-credit-card"></i>
+                                    </a>
+                                    <form asp-action="Delete" asp-route-id="@p.PatientId" method="post" style="display:inline"
+                                          onsubmit="return confirm('Delete patient @p.Name?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="action-delete" title="Delete patient">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function () {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('.patient-row').forEach(row => {
+            const name  = row.dataset.name;
+            const phone = row.dataset.phone;
+            row.style.display = (name.includes(term) || phone.includes(term)) ? '' : 'none';
+        });
+        // update count
+        const visible = document.querySelectorAll('.patient-row:not([style*="none"])').length;
+        document.getElementById('patientsCount').textContent = visible;
+    });
+
+    function clearSearch() {
+        searchInput.value = '';
+        document.querySelectorAll('.patient-row').forEach(r => r.style.display = '');
+        document.getElementById('patientsCount').textContent = '@Model.Count()';
+    }
+</script>
+}

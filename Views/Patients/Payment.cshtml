@@ -1,0 +1,82 @@
+@using HemaSense.Models
+@model Patient
+@{
+    ViewData["Title"] = "Payment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/app.css" />
+<style>
+    .payment-card { max-width: 560px; }
+    .payment-summary { margin: 24px 0; }
+    .payment-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .payment-row.total    { background: #f8fafc; }
+    .payment-row.paid     { background: #f0fdf4; color: #15803d; }
+    .payment-row.remaining { background: #fef2f2; color: #b91c1c; font-weight: 700; }
+    .payment-amount { font-size: 20px; font-weight: 700; }
+</style>
+}
+
+<div class="container">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="main-content">
+        <div class="header">
+            <h1>Payment Details</h1>
+            <div class="header-right">
+                <a href="@Url.Action("Index")" style="color:#3b82f6;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Patients
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert-danger">@TempData["Error"]</div>
+        }
+
+        <div class="form-container payment-card">
+            <h2 style="margin-bottom:8px;color:#1e293b;"><i class="fa-solid fa-user" style="color:#3b82f6;"></i> @Model.Name</h2>
+            <p style="color:#64748b;font-size:14px;">Patient #@Model.PatientId.ToString("D3")</p>
+
+            <div class="payment-summary">
+                <div class="payment-row total">
+                    <span>Total Cost</span>
+                    <span class="payment-amount">$@Model.TotalPayment.ToString("F2")</span>
+                </div>
+                <div class="payment-row paid">
+                    <span><i class="fa-solid fa-check-circle"></i> Paid Amount</span>
+                    <span class="payment-amount">$@Model.PaidAmount.ToString("F2")</span>
+                </div>
+                <div class="payment-row remaining">
+                    <span><i class="fa-solid fa-circle-exclamation"></i> Remaining</span>
+                    <span class="payment-amount">$@Model.Remaining.ToString("F2")</span>
+                </div>
+            </div>
+
+            <form asp-action="AddPayment" asp-route-id="@Model.PatientId" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label for="amount">Add Payment Amount ($)</label>
+                    <input type="number" id="amount" name="amount" step="0.01" min="0.01"
+                           max="@Model.Remaining" placeholder="Enter amount" required />
+                </div>
+                <div class="form-actions">
+                    <a href="@Url.Action("Index")" class="btn btn-clear"><i class="fa-solid fa-xmark"></i> Cancel</a>
+                    <button type="submit" class="btn btn-register">
+                        <i class="fa-solid fa-check"></i> Add Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

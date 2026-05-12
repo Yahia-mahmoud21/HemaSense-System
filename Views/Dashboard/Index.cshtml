@@ -1,0 +1,106 @@
+@using HemaSense.Models
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user   = ViewBag.User   as SessionUser;
+    var stats  = ViewBag.Stats  as DashboardStats;
+    var patients = (ViewBag.LatestPatients as IEnumerable<Patient>)?.Take(5).ToList() ?? new List<Patient>();
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/app.css" />
+}
+
+<div class="container">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <div class="header-right">
+                <div class="user-icon">
+                    <i class="fa-solid fa-user"></i>
+                    <span style="margin-left:8px;font-size:14px;font-weight:600;">@user?.Name</span>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert-success">
+                <i class="fa-solid fa-check-circle"></i> @TempData["Success"]
+            </div>
+        }
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#eff6ff;color:#3b82f6;">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">@(stats?.TotalPatients ?? 0)</div>
+                    <div class="stat-label">Total Patients</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#dcfce7;color:#15803d;">
+                    <i class="fa-solid fa-file-medical"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">@(stats?.TotalReports ?? 0)</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fef3c7;color:#b45309;">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">@(stats?.PendingReports ?? 0)</div>
+                    <div class="stat-label">Pending Reports</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="latest-section">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Latest Registered Patients</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Test Type</th>
+                            <th>Phone Number</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!patients.Any())
+                        {
+                            <tr>
+                                <td colspan="5" style="text-align:center;padding:40px;color:#94a3b8;">
+                                    <i class="fa-solid fa-inbox" style="font-size:48px;display:block;margin-bottom:10px;"></i>
+                                    No patients registered yet
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var p in patients)
+                            {
+                                <tr>
+                                    <td>@p.Name</td>
+                                    <td>@p.Age</td>
+                                    <td>CBC Test</td>
+                                    <td>@p.Phone</td>
+                                    <td>@(p.NowDate.HasValue ? p.NowDate.Value.ToString("MMM dd, yyyy") : "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

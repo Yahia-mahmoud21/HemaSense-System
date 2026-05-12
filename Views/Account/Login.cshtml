@@ -1,0 +1,193 @@
+@model HemaSense.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    bool isDoctor = Model.Role == "doctor";
+}
+
+@section Styles {
+<style>
+    body { margin: 0; font-family: 'Inter', sans-serif; }
+    .login-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+        background-size: 24px 24px;
+        padding: 20px;
+    }
+    .login-card {
+        background: white;
+        border-radius: 24px;
+        padding: 50px 60px;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
+        max-width: 450px;
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    @@keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .login-header { text-align: center; margin-bottom: 40px; }
+    .login-icon { font-size: 48px; color: #3b82f6; margin-bottom: 16px; }
+    .login-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+    .role-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        background-color: #eff6ff;
+        color: #3b82f6;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #1e293b; font-size: 14px; }
+    .form-group input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 14px;
+        color: #1e293b;
+        transition: all 0.2s;
+        background-color: white;
+        box-sizing: border-box;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px #eff6ff;
+    }
+    .input-wrapper { position: relative; }
+    .password-toggle {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #94a3b8;
+        transition: color 0.2s;
+    }
+    .password-toggle:hover { color: #3b82f6; }
+    .alert-danger {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    .login-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: white;
+        background-color: #3b82f6;
+        box-shadow: 0 4px 6px -1px rgba(59,130,246,.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 8px;
+    }
+    .login-btn:hover {
+        background-color: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(59,130,246,.4);
+    }
+    .back-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: #64748b;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 24px;
+        transition: all 0.2s;
+    }
+    .back-link:hover { color: #3b82f6; gap: 12px; }
+    @@media (max-width: 600px) {
+        .login-card { padding: 40px 30px; }
+    }
+</style>
+}
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-icon">
+                @if (isDoctor)
+                {
+                    <i class="fa-solid fa-user-doctor"></i>
+                }
+                else
+                {
+                    <i class="fa-solid fa-user-pen"></i>
+                }
+            </div>
+            <h1>Welcome Back</h1>
+            <span class="role-badge">@(isDoctor ? "Doctor" : "Secretary")</span>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert-danger">
+                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <div>@err.ErrorMessage</div>
+                }
+            </div>
+        }
+
+        <form asp-action="Login" asp-controller="Account" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Role" />
+
+            <div class="form-group">
+                <label asp-for="Username">Username</label>
+                <input asp-for="Username" placeholder="Enter your username" autocomplete="username" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Password</label>
+                <div class="input-wrapper">
+                    <input asp-for="Password" type="password" id="passwordInput" placeholder="Enter your password" autocomplete="current-password" />
+                    <i class="fa-solid fa-eye password-toggle" id="pwToggle"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <span>Login</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <a href="@Url.Action("Home","Account")" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Home</span>
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('pwToggle').addEventListener('click', function () {
+        const input = document.getElementById('passwordInput');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
+</script>
+}

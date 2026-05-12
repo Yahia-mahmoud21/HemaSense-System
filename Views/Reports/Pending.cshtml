@@ -1,0 +1,92 @@
+@using HemaSense.Models
+@model IEnumerable<Patient>
+@{
+    ViewData["Title"] = "Pending Reports";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user = ViewBag.User as SessionUser;
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/app.css" />
+}
+
+<div class="container">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="main-content">
+        <div class="header">
+            <h1>Pending Reports</h1>
+            <div class="header-right">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search patients...">
+                    <span class="close-icon" onclick="clearSearch()"><i class="fa-solid fa-xmark"></i></span>
+                </div>
+                <div class="user-icon"><i class="fa-solid fa-user-doctor"></i></div>
+            </div>
+        </div>
+
+        <div class="patients-header">
+            <div class="patients-count">
+                <span id="pendingCount">@Model.Count()</span> Patients Awaiting Reports
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Phone</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" style="text-align:center;padding:40px;">
+                                <i class="fa-solid fa-check-circle" style="font-size:48px;color:#10b981;display:block;margin-bottom:10px;"></i>
+                                No pending reports – All patients have reports!
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var p in Model)
+                        {
+                            <tr class="patient-row" data-name="@p.Name.ToLower()" data-phone="@p.Phone">
+                                <td>#@p.PatientId.ToString("D3")</td>
+                                <td>@p.Name</td>
+                                <td>@p.Age</td>
+                                <td>@p.Phone</td>
+                                <td>@(p.NowDate.HasValue ? p.NowDate.Value.ToString("MMM dd, yyyy") : "-")</td>
+                                <td>
+                                    <a href="@Url.Action("Create","Reports", new{id=p.PatientId})" class="view-report-btn">
+                                        <i class="fa-solid fa-file-signature"></i> Create Report
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('.patient-row').forEach(r => {
+            r.style.display = (r.dataset.name.includes(term) || r.dataset.phone.includes(term)) ? '' : 'none';
+        });
+    });
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        document.querySelectorAll('.patient-row').forEach(r => r.style.display = '');
+    }
+</script>
+}

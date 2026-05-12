@@ -1,0 +1,44 @@
+@using HemaSense.Models
+@{
+    var user = ViewBag.User as SessionUser;
+    var currentPage = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+}
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-icon"><i class="fa-solid fa-hospital"></i></div>
+        <span>HemaSense</span>
+    </div>
+    <ul class="sidebar-menu">
+        <li>
+            <a href="@Url.Action("Index","Dashboard")" class="@(currentPage=="Dashboard"?"active":"")">
+                <i class="fa-solid fa-chart-line icon"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="@Url.Action("Register","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()=="Register"?"active":"")">
+                <i class="fa-solid fa-pen-to-square icon"></i> Register Patient
+            </a>
+        </li>
+        <li>
+            <a href="@Url.Action("Index","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()!="Register"?"active":"")">
+                <i class="fa-solid fa-users icon"></i> Patients
+            </a>
+        </li>
+        @if (user?.Role == "doctor")
+        {
+            <li>
+                <a href="@Url.Action("Pending","Reports")" class="@(currentPage=="Reports"?"active":"")">
+                    <i class="fa-solid fa-clipboard-list icon"></i> Pending Reports
+                </a>
+            </li>
+        }
+        <li>
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="sidebar-logout-btn">
+                    <i class="fa-solid fa-right-from-bracket icon"></i> Logout
+                </button>
+            </form>
+        </li>
+    </ul>
+</div>

@@ -1,0 +1,56 @@
+@using HemaSense.Models
+@model Patient
+@{
+    ViewData["Title"] = "Edit Patient";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/app.css" />
+}
+
+<div class="container">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="main-content">
+        <div class="header">
+            <h1>Edit Patient</h1>
+            <div class="header-right">
+                <a href="@Url.Action("Index")" style="color:#3b82f6;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Patients
+                </a>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <form asp-action="Edit" asp-route-id="@Model.PatientId" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label asp-for="Name">Full Name</label>
+                        <input asp-for="Name" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Age">Age</label>
+                        <input asp-for="Age" type="number" min="0" max="150" />
+                        <span asp-validation-for="Age" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Phone">Phone Number</label>
+                        <input asp-for="Phone" type="tel" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="TotalPayment">Total Payment ($)</label>
+                        <input asp-for="TotalPayment" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="TotalPayment" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a href="@Url.Action("Index")" class="btn btn-clear"><i class="fa-solid fa-xmark"></i> Cancel</a>
+                    <button type="submit" class="btn btn-register"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
