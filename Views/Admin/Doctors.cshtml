@@ -1,0 +1,284 @@
+@using HemaSense.Models
+@model IEnumerable<Doctor>
+@{
+    ViewData["Title"] = "Manage Doctors";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user = ViewBag.User as SessionUser;
+    var list = Model.ToList();
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/app.css" />
+<style>
+    .admin-panel {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+    @@media (max-width: 1100px) { .admin-panel { grid-template-columns: 1fr; } }
+
+    .add-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        position: sticky;
+        top: 24px;
+    }
+    .add-card-header {
+        background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+        padding: 22px 24px;
+        color: white;
+    }
+    .add-card-header h3 {
+        font-size: 16px; font-weight: 700;
+        display: flex; align-items: center; gap: 9px; margin: 0;
+    }
+    .add-card-body { padding: 24px; }
+    .add-card-body .form-group { margin-bottom: 16px; }
+    .add-card-body label {
+        display: block; font-size: 13px; font-weight: 600;
+        color: var(--text-primary); margin-bottom: 6px;
+    }
+    .add-card-body input {
+        width: 100%; padding: 11px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        font-size: 14px; color: var(--text-primary);
+        transition: all .2s; background: white;
+    }
+    .add-card-body input:focus {
+        outline: none; border-color: #0f766e;
+        box-shadow: 0 0 0 3px rgba(15,118,110,.1);
+    }
+    .btn-add {
+        width: 100%; padding: 12px;
+        background: #0f766e; color: white;
+        border: none; border-radius: var(--radius-md);
+        font-size: 14px; font-weight: 600; cursor: pointer;
+        transition: all .2s; display: flex; align-items: center;
+        justify-content: center; gap: 8px;
+    }
+    .btn-add:hover { background: #0d6b63; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,118,110,.35); }
+
+    .list-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .list-card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex; align-items: center;
+        justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .list-card-header h3 {
+        font-size: 16px; font-weight: 700; color: var(--text-primary);
+        display: flex; align-items: center; gap: 9px; margin: 0;
+    }
+    .count-badge {
+        background: #f0fdfa; color: #0f766e;
+        border-radius: 100px; padding: 3px 12px;
+        font-size: 13px; font-weight: 700;
+    }
+    .search-inline input {
+        padding: 8px 14px; border: 1px solid var(--border-color);
+        border-radius: var(--radius-md); font-size: 13px;
+        width: 220px; transition: all .2s;
+    }
+    .search-inline input:focus { outline: none; border-color: #0f766e; }
+
+    .avatar {
+        width: 38px; height: 38px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .avatar-teal { background: linear-gradient(135deg,#0f766e,#14b8a6); }
+
+    .btn-row-edit {
+        padding: 6px 14px; font-size: 12px; font-weight: 600;
+        background: rgba(245,158,11,.1); color: #b45309;
+        border: 1px solid rgba(245,158,11,.25);
+        border-radius: var(--radius-sm); cursor: pointer;
+        transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
+        text-decoration: none;
+    }
+    .btn-row-edit:hover { background: rgba(245,158,11,.2); transform: translateY(-1px); }
+    .btn-row-delete {
+        padding: 6px 14px; font-size: 12px; font-weight: 600;
+        background: rgba(239,68,68,.08); color: #b91c1c;
+        border: 1px solid rgba(239,68,68,.2);
+        border-radius: var(--radius-sm); cursor: pointer;
+        transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .btn-row-delete:hover { background: rgba(239,68,68,.18); transform: translateY(-1px); }
+
+    .you-badge {
+        background: #f0fdfa; color: #0f766e;
+        border: 1px solid #99f6e4;
+        border-radius: 100px; padding: 2px 10px;
+        font-size: 11px; font-weight: 700;
+        margin-left: 6px;
+    }
+    .pw-mask { font-family: monospace; letter-spacing: 2px; color: var(--text-muted); font-size: 13px; }
+    .empty-row td { text-align: center; padding: 50px; color: var(--text-muted); font-size: 14px; }
+</style>
+}
+
+<div class="container">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1><i class="fa-solid fa-user-doctor" style="color:#0f766e;font-size:22px;margin-right:10px;"></i>Manage Doctors</h1>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">Add, edit or remove doctor accounts.</div>
+            </div>
+            <div class="header-right">
+                <div class="user-icon">
+                    <i class="fa-solid fa-user-doctor"></i>
+                    <span>Dr. @user?.Name</span>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert-success"><i class="fa-solid fa-check-circle"></i> @TempData["Success"]</div>
+        }
+        @if (TempData["DocError"] != null)
+        {
+            <div class="alert-danger"><i class="fa-solid fa-triangle-exclamation"></i> @TempData["DocError"]</div>
+        }
+
+        <div class="admin-panel">
+
+            <div class="add-card">
+                <div class="add-card-header">
+                    <h3><i class="fa-solid fa-user-plus"></i> Add New Doctor</h3>
+                </div>
+                <div class="add-card-body">
+                    <form asp-action="CreateDoctor" asp-controller="Admin" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" name="Name" placeholder="e.g. Dr. Ahmed Hassan" required autocomplete="off" />
+                        </div>
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" name="Username" placeholder="e.g. dr.ahmed" required autocomplete="off" />
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="text" name="Password" placeholder="Initial password" required autocomplete="off" />
+                        </div>
+                        <button type="submit" class="btn-add">
+                            <i class="fa-solid fa-plus"></i> Add Doctor
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="list-card">
+                <div class="list-card-header">
+                    <h3><i class="fa-solid fa-stethoscope" style="color:#0f766e;"></i> All Doctors
+                        <span class="count-badge" id="docCount">@list.Count</span>
+                    </h3>
+                    <div class="search-inline">
+                        <input type="text" id="searchInput" placeholder="Search name…" oninput="filterRows()" />
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table id="docTable">
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">ID</th>
+                                <th>Doctor</th>
+                                <th>Username</th>
+                                <th>Password</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="docBody">
+                            @if (!list.Any())
+                            {
+                                <tr class="empty-row">
+                                    <td colspan="5">
+                                        <i class="fa-solid fa-user-slash" style="font-size:32px;display:block;margin-bottom:10px;opacity:.3;"></i>
+                                        No doctors yet. Add one using the form.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var d in list)
+                                {
+                                    bool isCurrentUser = user != null && d.Name == user.Name;
+                                    <tr class="doc-row" data-name="@d.Name.ToLower()">
+                                        <td><span style="font-size:12px;font-weight:700;color:#0f766e;background:#f0fdfa;padding:3px 8px;border-radius:6px;">#@d.DoctorId</span></td>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:10px;">
+                                                <div class="avatar avatar-teal">@d.Name[0].ToString().ToUpper()</div>
+                                                <div>
+                                                    <strong>@d.Name</strong>
+                                                    @if (isCurrentUser)
+                                                    {
+                                                        <span class="you-badge">You</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="color:var(--text-secondary);font-size:13px;">@@d.Username</td>
+                                        <td><span class="pw-mask">••••••••</span></td>
+                                        <td>
+                                            <div style="display:flex;gap:6px;">
+                                                <a href="@Url.Action("EditDoctor","Admin",new{id=d.DoctorId})" class="btn-row-edit">
+                                                    <i class="fa-solid fa-pen"></i> Edit
+                                                </a>
+                                                @if (!isCurrentUser)
+                                                {
+                                                    <form asp-action="DeleteDoctor" asp-controller="Admin" asp-route-id="@d.DoctorId" method="post" style="display:inline"
+                                                          onsubmit="return confirm('Delete Dr. @d.Name? This cannot be undone.')">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn-row-delete">
+                                                            <i class="fa-solid fa-trash"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <span style="font-size:12px;color:var(--text-muted);padding:6px 10px;">Can't delete self</span>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function filterRows() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        let count = 0;
+        document.querySelectorAll('.doc-row').forEach(r => {
+            const match = r.dataset.name.includes(term);
+            r.style.display = match ? '' : 'none';
+            if (match) count++;
+        });
+        document.getElementById('docCount').textContent = count;
+    }
+</script>
+}

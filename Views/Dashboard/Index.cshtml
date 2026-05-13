@@ -73,6 +73,7 @@
                             <th>Test Type</th>
                             <th>Phone Number</th>
                             <th>Date</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -89,18 +90,35 @@
                         {
                             @foreach (var p in patients)
                             {
+                                bool isComplete = p.Remaining <= 0;
                                 <tr>
                                     <td>@p.Name</td>
                                     <td>@p.Age</td>
                                     <td>CBC Test</td>
                                     <td>@p.Phone</td>
                                     <td>@(p.NowDate.HasValue ? p.NowDate.Value.ToString("MMM dd, yyyy") : "-")</td>
+                                    <td>
+                                        @if (isComplete)
+                                        {
+                                            <span class="badge badge-complete"><i class="fa-solid fa-check"></i> Complete</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         }
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <div style="text-align:right;margin-top:-8px;margin-bottom:24px;">
+            <a href="@Url.Action("AllPatients","Patients")" style="font-size:14px;font-weight:600;color:var(--primary-color);display:inline-flex;align-items:center;gap:6px;">
+                View All Patients <i class="fa-solid fa-arrow-right"></i>
+            </a>
         </div>
     </div>
 </div>

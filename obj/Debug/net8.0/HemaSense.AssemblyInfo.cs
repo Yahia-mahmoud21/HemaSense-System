@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HemaSense")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a8338cabc73c8d59e86c12254cd72a85fde4bafc")]
 [assembly: System.Reflection.AssemblyProductAttribute("HemaSense")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HemaSense")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

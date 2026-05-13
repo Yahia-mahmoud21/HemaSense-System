@@ -1,0 +1,432 @@
+@using HemaSense.Models
+@model IEnumerable<Patient>
+@{
+    ViewData["Title"] = "All Patients";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user     = ViewBag.User as SessionUser;
+    int offset   = (int)(ViewBag.Offset   ?? 0);
+    int pageSize = (int)(ViewBag.PageSize  ?? 10);
+    bool hasMore = (bool)(ViewBag.HasMore  ?? false);
+    var list     = Model.ToList();
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/app.css" />
+<style>
+    /* ── Filter tabs ── */
+    .filter-tabs {
+        display: flex;
+        gap: 6px;
+        background: #f1f5f9;
+        border-radius: 12px;
+        padding: 5px;
+        width: fit-content;
+    }
+    .filter-tab {
+        padding: 7px 20px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        transition: all .2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .filter-tab.active {
+        background: white;
+        color: var(--primary-color);
+        box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }
+    .filter-tab .tab-count {
+        background: var(--border-color);
+        color: var(--text-secondary);
+        border-radius: 100px;
+        padding: 1px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        transition: all .2s;
+    }
+    .filter-tab.active .tab-count {
+        background: var(--primary-light);
+        color: var(--primary-color);
+    }
+
+    /* ── Search card ── */
+    .search-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 18px 24px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow-sm);
+    }
+    .search-card .search-box { flex: 1; min-width: 240px; }
+    .search-card .search-box input { width: 100%; }
+
+    /* ── Table empty state ── */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+    .empty-state i { font-size: 52px; display: block; margin-bottom: 14px; opacity: .3; }
+    .empty-state p { font-size: 15px; }
+
+    /* ── Patient ID chip ── */
+    .id-chip {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--primary-color);
+        background: var(--primary-light);
+        border-radius: 6px;
+        padding: 3px 8px;
+        letter-spacing: .3px;
+    }
+
+    /* ── Payment bar ── */
+    .payment-info { font-size: 13px; color: var(--text-primary); line-height: 1.6; }
+    .payment-bar-wrap {
+        height: 5px;
+        background: #e2e8f0;
+        border-radius: 99px;
+        margin-top: 4px;
+        overflow: hidden;
+        min-width: 70px;
+    }
+    .payment-bar { height: 100%; border-radius: 99px; background: var(--success-color); transition: width .4s; }
+
+    /* ── Load more spinner ── */
+    @@keyframes spin { to { transform: rotate(360deg); } }
+    .fa-spin { animation: spin 1s linear infinite; }
+</style>
+}
+
+<div class="container">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+
+        <div class="header">
+            <div>
+                <h1 style="margin-bottom:4px;">
+                    <i class="fa-solid fa-list-ul" style="color:var(--primary-color);font-size:22px;margin-right:10px;"></i>All Patients
+                </h1>
+                <div style="font-size:13px;color:var(--text-muted);">
+                    Browse, filter and search every patient in the system.
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="@Url.Action("Register","Patients")" class="add-btn">
+                    <i class="fa-solid fa-plus"></i> Add Patient
+                </a>
+                <div class="user-icon">
+                    <i class="fa-solid fa-user"></i>
+                    <span>@user?.Name</span>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert-success"><i class="fa-solid fa-check-circle"></i> @TempData["Success"]</div>
+        }
+
+        <div class="search-card">
+            <div class="search-box">
+                <input type="text" id="searchInput"
+                       placeholder="Search by name or patient ID…"
+                       autocomplete="off" />
+                <span class="close-icon" onclick="clearSearch()">
+                    <i class="fa-solid fa-xmark"></i>
+                </span>
+            </div>
+
+            <div class="filter-tabs" id="filterTabs">
+                <button class="filter-tab active" data-filter="all" onclick="setFilter('all',this)">
+                    All <span class="tab-count" id="cnt-all">@list.Count</span>
+                </button>
+                <button class="filter-tab" data-filter="pending" onclick="setFilter('pending',this)">
+                    <i class="fa-solid fa-clock" style="color:#f59e0b;font-size:11px;"></i>
+                    Pending <span class="tab-count" id="cnt-pending">@list.Count(p => p.Remaining > 0)</span>
+                </button>
+                <button class="filter-tab" data-filter="complete" onclick="setFilter('complete',this)">
+                    <i class="fa-solid fa-check" style="color:#10b981;font-size:11px;"></i>
+                    Complete <span class="tab-count" id="cnt-complete">@list.Count(p => p.Remaining <= 0)</span>
+                </button>
+            </div>
+
+            <div id="searchStatus" style="font-size:13px;color:var(--text-muted);white-space:nowrap;min-width:80px;"></div>
+        </div>
+
+        <div class="patients-header" style="margin-bottom:16px;">
+            <div class="patients-count">
+                Showing <strong id="visibleCount">@list.Count</strong> patient(s)
+            </div>
+        </div>
+
+        <div class="table-container" style="padding:0;overflow:hidden;">
+            <table id="patientsTable">
+                <thead>
+                    <tr>
+                        <th style="width:90px;">ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Phone</th>
+                        <th>Secretary</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th style="width:110px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    @foreach (var p in list)
+                    {
+                        bool isComplete = p.Remaining <= 0;
+                        decimal pct     = p.TotalPayment > 0
+                                          ? Math.Min(100, (p.PaidAmount / p.TotalPayment) * 100)
+                                          : 100;
+                        <tr class="patient-row" data-status="@(isComplete ? "complete" : "pending")">
+                            <td><span class="id-chip">#@p.PatientId.ToString("D3")</span></td>
+                            <td><strong>@p.Name</strong></td>
+                            <td>@p.Age</td>
+                            <td>@p.Phone</td>
+                            <td style="color:var(--text-secondary);">@(p.SecretaryName ?? "-")</td>
+                            <td>
+                                <div class="payment-info">
+                                    $@p.PaidAmount.ToString("F2") / $@p.TotalPayment.ToString("F2")
+                                </div>
+                                <div class="payment-bar-wrap">
+                                    <div class="payment-bar" style="width:@pct.ToString("F0")%;background:@(isComplete?"#10b981":"#f59e0b");"></div>
+                                </div>
+                            </td>
+                            <td>
+                                @if (isComplete)
+                                {
+                                    <span class="badge badge-complete"><i class="fa-solid fa-check"></i> Complete</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>
+                                }
+                            </td>
+                            <td style="color:var(--text-secondary);font-size:13px;">
+                                @(p.NowDate.HasValue ? p.NowDate.Value.ToString("MMM dd, yyyy") : "-")
+                            </td>
+                            <td>
+                                <div class="action-links">
+                                    <a href="@Url.Action("Details","Patients",new{id=p.PatientId})" title="View" class="action-view">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("Edit","Patients",new{id=p.PatientId})" title="Edit" class="action-edit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    <a href="@Url.Action("Payment","Patients",new{id=p.PatientId})" title="Payment" class="action-payment">
+                                        <i class="fa-solid fa-credit-card"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="empty-state" id="emptyState" style="display:none;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <p>No patients match your search or filter.</p>
+            </div>
+        </div>
+
+        @* Load More *@
+        <div class="load-more-wrap" id="loadMoreWrap" style="display:@(hasMore ? "flex" : "none")">
+            <button class="btn-load-more" id="loadMoreBtn" onclick="loadMore()">
+                <i class="fa-solid fa-chevron-down"></i> Load 10 More
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    /* ── State ── */
+    let currentOffset  = @(offset + pageSize);
+    const PAGE_SIZE    = @pageSize;
+    let activeFilter   = 'all';
+    let searchTimer    = null;
+    let isSearching    = false;
+
+    /* ── DOM refs ── */
+    const searchInput   = document.getElementById('searchInput');
+    const tableBody     = document.getElementById('tableBody');
+    const loadMoreWrap  = document.getElementById('loadMoreWrap');
+    const visibleCount  = document.getElementById('visibleCount');
+    const emptyState    = document.getElementById('emptyState');
+    const searchStatus  = document.getElementById('searchStatus');
+    const table         = document.getElementById('patientsTable');
+
+    /* ════════════════════════════════
+       FILTER TABS (client-side on loaded rows)
+    ════════════════════════════════ */
+    function setFilter(filter, btn) {
+        activeFilter = filter;
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilter();
+    }
+
+    function applyFilter() {
+        const rows = tableBody.querySelectorAll('.patient-row');
+        let shown = 0;
+        rows.forEach(row => {
+            const status = row.dataset.status; // 'complete' | 'pending'
+            const visible = activeFilter === 'all' || status === activeFilter;
+            row.style.display = visible ? '' : 'none';
+            if (visible) shown++;
+        });
+        visibleCount.textContent = shown;
+        emptyState.style.display  = shown === 0 ? 'block'  : 'none';
+        table.style.display       = shown === 0 ? 'none'   : '';
+    }
+
+    /* ════════════════════════════════
+       SEARCH (AJAX)
+    ════════════════════════════════ */
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(doSearch, 280);
+    });
+
+    async function doSearch() {
+        const q = searchInput.value.trim();
+        isSearching = q.length > 0;
+
+        if (!isSearching) {
+            clearSearch();
+            return;
+        }
+
+        searchStatus.textContent = 'Searching…';
+        loadMoreWrap.style.display = 'none';
+
+        try {
+            const resp = await fetch(`/Patients/SearchPatients?q=${encodeURIComponent(q)}`);
+            const data = await resp.json();
+            renderRows(data.patients, false, false);
+            searchStatus.textContent = data.patients.length
+                ? `${data.patients.length} result(s)`
+                : 'No results';
+            updateTabCounts(data.patients);
+        } catch {
+            searchStatus.textContent = 'Search failed.';
+        }
+    }
+
+    function clearSearch() {
+        searchInput.value = '';
+        isSearching = false;
+        searchStatus.textContent = '';
+        location.reload();
+    }
+
+    /* ════════════════════════════════
+       LOAD MORE (AJAX)
+    ════════════════════════════════ */
+    async function loadMore() {
+        if (isSearching) return;
+
+        const btn = document.getElementById('loadMoreBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading…';
+
+        try {
+            const resp = await fetch(`/Patients/SearchPatients?q=&offset=${currentOffset}`);
+            const data = await resp.json();
+            renderRows(data.patients, true, true);
+            currentOffset += data.patients.length;
+            loadMoreWrap.style.display = data.hasMore ? 'flex' : 'none';
+        } catch (e) {
+            console.error('Load more failed', e);
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Load 10 More';
+    }
+
+    /* ════════════════════════════════
+       RENDER ROWS
+    ════════════════════════════════ */
+    function renderRows(patients, append, reapplyFilter) {
+        if (!append) tableBody.innerHTML = '';
+
+        patients.forEach(p => {
+            const complete = p.isComplete;
+            const pct = p.totalPayment > 0
+                ? Math.min(100, ((p.totalPayment - p.remaining) / p.totalPayment) * 100).toFixed(0)
+                : 100;
+            const paid  = (p.totalPayment - p.remaining).toFixed(2);
+            const total = parseFloat(p.totalPayment).toFixed(2);
+            const id    = String(p.patientId).padStart(3, '0');
+            const badge = complete
+                ? `<span class="badge badge-complete"><i class="fa-solid fa-check"></i> Complete</span>`
+                : `<span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>`;
+            const barColor = complete ? '#10b981' : '#f59e0b';
+
+            tableBody.insertAdjacentHTML('beforeend', `
+                <tr class="patient-row" data-status="${complete ? 'complete' : 'pending'}">
+                    <td><span class="id-chip">#${id}</span></td>
+                    <td><strong>${esc(p.name)}</strong></td>
+                    <td>${p.age}</td>
+                    <td>${esc(p.phone)}</td>
+                    <td style="color:var(--text-secondary);">${esc(p.secretaryName ?? '-')}</td>
+                    <td>
+                        <div class="payment-info">$${paid} / $${total}</div>
+                        <div class="payment-bar-wrap">
+                            <div class="payment-bar" style="width:${pct}%;background:${barColor};"></div>
+                        </div>
+                    </td>
+                    <td>${badge}</td>
+                    <td style="color:var(--text-secondary);font-size:13px;">${esc(p.nowDate)}</td>
+                    <td>
+                        <div class="action-links">
+                            <a href="/Patients/Details/${p.patientId}" title="View" class="action-view"><i class="fa-solid fa-eye"></i></a>
+                            <a href="/Patients/Edit/${p.patientId}" title="Edit" class="action-edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                            <a href="/Patients/Payment/${p.patientId}" title="Payment" class="action-payment"><i class="fa-solid fa-credit-card"></i></a>
+                        </div>
+                    </td>
+                </tr>`);
+        });
+
+        if (reapplyFilter) applyFilter(); else {
+            const total = tableBody.querySelectorAll('.patient-row').length;
+            visibleCount.textContent = total;
+            emptyState.style.display = total === 0 ? 'block' : 'none';
+            table.style.display      = total === 0 ? 'none'  : '';
+            updateTabCounts(patients);
+        }
+    }
+
+    function updateTabCounts(patients) {
+        const all      = patients.length;
+        const pending  = patients.filter(p => !p.isComplete).length;
+        const complete = patients.filter(p => p.isComplete).length;
+        document.getElementById('cnt-all').textContent      = all;
+        document.getElementById('cnt-pending').textContent  = pending;
+        document.getElementById('cnt-complete').textContent = complete;
+    }
+
+    function esc(str) {
+        if (!str) return '-';
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+</script>
+}

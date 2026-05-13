@@ -47,6 +47,78 @@ namespace HemaSense.Services
             return await conn.QueryAsync<Patient>(sql);
         }
 
+        public async Task<IEnumerable<Patient>> GetPagedPatientsAsync(int offset, int limit)
+        {
+            const string sql = """
+                SELECT p.patient_id       AS PatientId,
+                       p.name             AS Name,
+                       p.age              AS Age,
+                       p.phone            AS Phone,
+                       p.total_payment    AS TotalPayment,
+                       p.remaining        AS Remaining,
+                       p.secertary_id     AS SecretaryId,
+                       p.now_date         AS NowDate,
+                       s.name             AS SecretaryName
+                FROM patients p
+                LEFT JOIN secertary s ON p.secertary_id = s.secertary_id
+                ORDER BY p.patient_id DESC
+                LIMIT @Limit OFFSET @Offset
+                """;
+            using var conn = CreateConnection();
+            return await conn.QueryAsync<Patient>(sql, new { Limit = limit, Offset = offset });
+        }
+
+        public async Task<IEnumerable<Patient>> SearchPatientsAsync(string query, int limit = 20)
+        {
+            bool isId = int.TryParse(query.Trim(), out int patientId);
+            string sql;
+            object param;
+
+            if (isId)
+            {
+                sql = """
+                    SELECT p.patient_id       AS PatientId,
+                           p.name             AS Name,
+                           p.age              AS Age,
+                           p.phone            AS Phone,
+                           p.total_payment    AS TotalPayment,
+                           p.remaining        AS Remaining,
+                           p.secertary_id     AS SecretaryId,
+                           p.now_date         AS NowDate,
+                           s.name             AS SecretaryName
+                    FROM patients p
+                    LEFT JOIN secertary s ON p.secertary_id = s.secertary_id
+                    WHERE p.patient_id = @PatientId
+                    ORDER BY p.patient_id DESC
+                    LIMIT @Limit
+                    """;
+                param = new { PatientId = patientId, Limit = limit };
+            }
+            else
+            {
+                sql = """
+                    SELECT p.patient_id       AS PatientId,
+                           p.name             AS Name,
+                           p.age              AS Age,
+                           p.phone            AS Phone,
+                           p.total_payment    AS TotalPayment,
+                           p.remaining        AS Remaining,
+                           p.secertary_id     AS SecretaryId,
+                           p.now_date         AS NowDate,
+                           s.name             AS SecretaryName
+                    FROM patients p
+                    LEFT JOIN secertary s ON p.secertary_id = s.secertary_id
+                    WHERE p.name LIKE @Name
+                    ORDER BY p.patient_id DESC
+                    LIMIT @Limit
+                    """;
+                param = new { Name = "%" + query.Trim() + "%", Limit = limit };
+            }
+
+            using var conn = CreateConnection();
+            return await conn.QueryAsync<Patient>(sql, param);
+        }
+
         public async Task<Patient?> GetPatientByIdAsync(int patientId)
         {
             const string sql = """
@@ -217,6 +289,46 @@ namespace HemaSense.Services
             return await conn.ExecuteScalarAsync<int>(sql, report);
         }
 
+        public async Task<Report?> GetReportByIdAsync(int reportId)
+        {
+            const string sql = """
+                SELECT r.report_id     AS ReportId,
+                       r.patient_id    AS PatientId,
+                       r.WBC, r.RBC, r.HGB, r.HCT,
+                       r.MCV, r.MCH, r.MCHC, r.PLT,
+                       r.Diagnosis,
+                       p.name          AS PatientName,
+                       p.age           AS PatientAge,
+                       p.phone         AS PatientPhone,
+                       p.now_date      AS PatientDate
+                FROM report r
+                INNER JOIN patients p ON r.patient_id = p.patient_id
+                WHERE r.report_id = @ReportId
+                """;
+            using var conn = CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Report>(sql, new { ReportId = reportId });
+        }
+
+        public async Task<bool> UpdateReportAsync(Report report)
+        {
+            const string sql = """
+                UPDATE report
+                SET WBC       = @WBC,
+                    RBC       = @RBC,
+                    HGB       = @HGB,
+                    HCT       = @HCT,
+                    MCV       = @MCV,
+                    MCH       = @MCH,
+                    MCHC      = @MCHC,
+                    PLT       = @PLT,
+                    Diagnosis = @Diagnosis
+                WHERE report_id = @ReportId
+                """;
+            using var conn = CreateConnection();
+            int rows = await conn.ExecuteAsync(sql, report);
+            return rows > 0;
+        }
+
         // ─────────────────────────────────────────────────────────────
         // AUTHENTICATION
         // ─────────────────────────────────────────────────────────────
@@ -262,9 +374,102 @@ namespace HemaSense.Services
                 """;
             using var conn = CreateConnection();
             return await conn.QueryFirstOrDefaultAsync<Secretary>(sql, new { Username = username, Password = password });
-            // const string sql = "SELECT secertary_id AS SecretaryId, name AS Name FROM secertary WHERE LOWER(name) = LOWER(@Name)";
-            // using var conn = CreateConnection();
-            // return await conn.QueryFirstOrDefaultAsync<Secretary>(sql, new { Name = name });
+        }
+
+        // Secretary CRUD
+        public async Task<Secretary?> GetSecretaryWithCredsByIdAsync(int id)
+        {
+            const string sql = """
+                SELECT secertary_id AS SecretaryId, name AS Name,
+                       username AS Username, password AS Password
+                FROM secertary WHERE secertary_id = @Id
+                """;
+            using var conn = CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Secretary>(sql, new { Id = id });
+        }
+
+        public async Task<int> CreateSecretaryAsync(Secretary s)
+        {
+            const string sql = """
+                INSERT INTO secertary (name, username, password)
+                VALUES (@Name, @Username, @Password);
+                SELECT LAST_INSERT_ID();
+                """;
+            using var conn = CreateConnection();
+            return await conn.ExecuteScalarAsync<int>(sql, s);
+        }
+
+        public async Task<bool> UpdateSecretaryAsync(Secretary s)
+        {
+            const string sql = """
+                UPDATE secertary
+                SET name = @Name, username = @Username, password = @Password
+                WHERE secertary_id = @SecretaryId
+                """;
+            using var conn = CreateConnection();
+            return await conn.ExecuteAsync(sql, s) > 0;
+        }
+
+        public async Task<bool> DeleteSecretaryAsync(int id)
+        {
+            using var conn = CreateConnection();
+            return await conn.ExecuteAsync(
+                "DELETE FROM secertary WHERE secertary_id = @Id", new { Id = id }) > 0;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // DOCTORS CRUD
+        // ─────────────────────────────────────────────────────────────
+
+        public async Task<IEnumerable<Doctor>> GetAllDoctorsAsync()
+        {
+            const string sql = """
+                SELECT doctor_id AS DoctorId, name AS Name,
+                       username AS Username, password AS Password
+                FROM doctor ORDER BY doctor_id
+                """;
+            using var conn = CreateConnection();
+            return await conn.QueryAsync<Doctor>(sql);
+        }
+
+        public async Task<Doctor?> GetDoctorByIdAsync(int id)
+        {
+            const string sql = """
+                SELECT doctor_id AS DoctorId, name AS Name,
+                       username AS Username, password AS Password
+                FROM doctor WHERE doctor_id = @Id
+                """;
+            using var conn = CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Doctor>(sql, new { Id = id });
+        }
+
+        public async Task<int> CreateDoctorAsync(Doctor d)
+        {
+            const string sql = """
+                INSERT INTO doctor (name, username, password)
+                VALUES (@Name, @Username, @Password);
+                SELECT LAST_INSERT_ID();
+                """;
+            using var conn = CreateConnection();
+            return await conn.ExecuteScalarAsync<int>(sql, d);
+        }
+
+        public async Task<bool> UpdateDoctorAsync(Doctor d)
+        {
+            const string sql = """
+                UPDATE doctor
+                SET name = @Name, username = @Username, password = @Password
+                WHERE doctor_id = @DoctorId
+                """;
+            using var conn = CreateConnection();
+            return await conn.ExecuteAsync(sql, d) > 0;
+        }
+
+        public async Task<bool> DeleteDoctorAsync(int id)
+        {
+            using var conn = CreateConnection();
+            return await conn.ExecuteAsync(
+                "DELETE FROM doctor WHERE doctor_id = @Id", new { Id = id }) > 0;
         }
 
         // ─────────────────────────────────────────────────────────────

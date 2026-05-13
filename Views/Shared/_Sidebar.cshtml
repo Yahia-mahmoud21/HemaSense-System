@@ -20,15 +20,41 @@
             </a>
         </li>
         <li>
-            <a href="@Url.Action("Index","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()!="Register"?"active":"")">
+            <a href="@Url.Action("AllPatients","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()=="AllPatients"?"active":"")">
+                <i class="fa-solid fa-list-ul icon"></i> All Patients
+            </a>
+        </li>
+        <li>
+            <a href="@Url.Action("Index","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()=="Index"?"active":"")">
                 <i class="fa-solid fa-users icon"></i> Patients
             </a>
         </li>
         @if (user?.Role == "doctor")
         {
             <li>
-                <a href="@Url.Action("Pending","Reports")" class="@(currentPage=="Reports"?"active":"")">
+                <a href="@Url.Action("Pending","Reports")" class="@(currentPage=="Reports" && ViewContext.RouteData.Values["action"]?.ToString()=="Pending"?"active":"")">
                     <i class="fa-solid fa-clipboard-list icon"></i> Pending Reports
+                </a>
+            </li>
+            <li>
+                <a href="@Url.Action("OldReports","Reports")" class="@(currentPage=="Reports" && ViewContext.RouteData.Values["action"]?.ToString()=="OldReports"?"active":"")">
+                    <i class="fa-solid fa-file-waveform icon"></i> Patient Reports
+                </a>
+            </li>
+            <li style="margin: 12px 0 4px; padding: 0 16px;">
+                <div style="height:1px;background:var(--border-color);"></div>
+                <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-top:10px;padding-left:4px;">
+                    Admin
+                </div>
+            </li>
+            <li>
+                <a href="@Url.Action("Secretaries","Admin")" class="@(currentPage=="Admin" && ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Secret") == true ?"active":"")">
+                    <i class="fa-solid fa-user-tie icon"></i> Secretaries
+                </a>
+            </li>
+            <li>
+                <a href="@Url.Action("Doctors","Admin")" class="@(currentPage=="Admin" && ViewContext.RouteData.Values["action"]?.ToString()?.StartsWith("Doctor") == true ?"active":"")">
+                    <i class="fa-solid fa-user-doctor icon"></i> Doctors
                 </a>
             </li>
         }

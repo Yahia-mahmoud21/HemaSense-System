@@ -1,6 +1,7 @@
 using HemaSense.Models;
 using HemaSense.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HemaSense.Controllers
@@ -30,6 +31,84 @@ namespace HemaSense.Controllers
             ViewBag.User = GetCurrentUser();
             var patients = await _db.GetAllPatientsAsync();
             return View(patients);
+        }
+
+        // GET /Patients/AllPatients?offset=0
+        public async Task<IActionResult> AllPatients(int offset = 0)
+        {
+            var auth = RequireAuth();
+            if (auth != null) return auth;
+
+            const int pageSize = 10;
+            ViewBag.User = GetCurrentUser();
+            ViewBag.Offset = offset;
+            ViewBag.PageSize = pageSize;
+
+            var patients = await _db.GetPagedPatientsAsync(offset, pageSize + 1); // fetch one extra to know if more exist
+            var list = patients.ToList();
+            ViewBag.HasMore = list.Count > pageSize;
+            if (ViewBag.HasMore) list = list.Take(pageSize).ToList();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                // Return partial rows for "load more"
+                return PartialView("_PatientRows", list);
+            }
+
+            return View(list);
+        }
+
+        // GET /Patients/SearchPatients?q=john&offset=0
+        [HttpGet]
+        public async Task<IActionResult> SearchPatients(string q = "", int offset = 0)
+        {
+            var auth = RequireAuth();
+            if (auth != null) return auth;
+
+            const int pageSize = 10;
+
+            if (string.IsNullOrWhiteSpace(q))
+            {
+                var paged = await _db.GetPagedPatientsAsync(offset, pageSize + 1);
+                var pagedList = paged.ToList();
+                bool hasMore = pagedList.Count > pageSize;
+                if (hasMore) pagedList = pagedList.Take(pageSize).ToList();
+
+                return Json(new
+                {
+                    patients = pagedList.Select(p => new
+                    {
+                        p.PatientId,
+                        p.Name,
+                        p.Age,
+                        p.Phone,
+                        p.SecretaryName,
+                        p.TotalPayment,
+                        p.Remaining,
+                        isComplete = p.Remaining <= 0,
+                        nowDate = p.NowDate.HasValue ? p.NowDate.Value.ToString("MMM dd, yyyy") : "-"
+                    }),
+                    hasMore
+                });
+            }
+
+            var results = await _db.SearchPatientsAsync(q, pageSize);
+            return Json(new
+            {
+                patients = results.Select(p => new
+                {
+                    p.PatientId,
+                    p.Name,
+                    p.Age,
+                    p.Phone,
+                    p.SecretaryName,
+                    p.TotalPayment,
+                    p.Remaining,
+                    isComplete = p.Remaining <= 0,
+                    nowDate = p.NowDate.HasValue ? p.NowDate.Value.ToString("MMM dd, yyyy") : "-"
+                }),
+                hasMore = false
+            });
         }
 
         // GET /Patients/Register

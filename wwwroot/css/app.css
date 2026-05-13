@@ -232,3 +232,40 @@ tr:hover td { background-color: #f8fafc; }
     .form-grid  { grid-template-columns: 1fr; }
     .main-content { padding: 20px; }
 }
+
+/* ─── Status Badges ─────────────────────────────────────────────── */
+.badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 100px;
+    font-size: 12px; font-weight: 600; letter-spacing: .3px;
+}
+.badge-pending {
+    background: rgba(245,158,11,.12);
+    color: #b45309;
+    border: 1px solid rgba(245,158,11,.25);
+}
+.badge-complete {
+    background: rgba(16,185,129,.12);
+    color: #065f46;
+    border: 1px solid rgba(16,185,129,.25);
+}
+.badge-pending::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; }
+.badge-complete::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+
+/* ─── Load More ─────────────────────────────────────────────────── */
+.load-more-wrap { display: flex; justify-content: center; margin-top: 20px; }
+.btn-load-more {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 28px; background: white;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md); font-size: 14px;
+    font-weight: 600; color: var(--text-secondary);
+    cursor: pointer; transition: all .2s;
+    box-shadow: var(--shadow-sm);
+}
+.btn-load-more:hover { background: var(--primary-light); color: var(--primary-color); border-color: var(--primary-color); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-load-more:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ─── Search hint in AllPatients ─────────────────────────────────  */
+.search-hint { font-size: 13px; color: var(--text-muted); margin-top: 6px; padding-left: 2px; }
+
