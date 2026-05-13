@@ -19,16 +19,17 @@
                 <i class="fa-solid fa-pen-to-square icon"></i> Register Patient
             </a>
         </li>
+         <li>
+            <a href="@Url.Action("Index","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()=="Index"?"active":"")">
+                <i class="fa-solid fa-users icon"></i> Today's Patients
+            </a>
+        </li>
         <li>
             <a href="@Url.Action("AllPatients","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()=="AllPatients"?"active":"")">
                 <i class="fa-solid fa-list-ul icon"></i> All Patients
             </a>
         </li>
-        <li>
-            <a href="@Url.Action("Index","Patients")" class="@(currentPage=="Patients" && ViewContext.RouteData.Values["action"]?.ToString()=="Index"?"active":"")">
-                <i class="fa-solid fa-users icon"></i> Patients
-            </a>
-        </li>
+       
         @if (user?.Role == "doctor")
         {
             <li>

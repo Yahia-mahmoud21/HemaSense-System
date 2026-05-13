@@ -41,10 +41,11 @@ namespace HemaSense.Services
                        s.name             AS SecretaryName
                 FROM patients p
                 LEFT JOIN secertary s ON p.secertary_id = s.secertary_id
+                where p.now_date = @NowDate
                 ORDER BY p.patient_id DESC
                 """;
             using var conn = CreateConnection();
-            return await conn.QueryAsync<Patient>(sql);
+            return await conn.QueryAsync<Patient>(sql, new { NowDate = DateTime.Now.ToString("yyyy-MM-dd") });
         }
 
         public async Task<IEnumerable<Patient>> GetPagedPatientsAsync(int offset, int limit)
@@ -478,19 +479,31 @@ namespace HemaSense.Services
 
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
             using var conn = CreateConnection();
-            int totalPatients = await conn.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM patients");
-            int totalReports  = await conn.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM report");
+
+            int totalPatients = await conn.ExecuteScalarAsync<int>("""
+                SELECT COUNT(*) FROM patients
+                WHERE DATE(now_date) = @Today
+                """, new { Today = today });
+
+            int totalReports = await conn.ExecuteScalarAsync<int>("""
+                SELECT COUNT(*) FROM report r
+                INNER JOIN patients p ON r.patient_id = p.patient_id
+                WHERE DATE(p.now_date) = @Today
+                """, new { Today = today });
+
             int pending = await conn.ExecuteScalarAsync<int>("""
                 SELECT COUNT(*) FROM patients p
                 LEFT JOIN report r ON p.patient_id = r.patient_id
                 WHERE r.report_id IS NULL
-                """);
+                  AND DATE(p.now_date) = @Today
+                """, new { Today = today });
 
             return new DashboardStats
             {
-                TotalPatients = totalPatients,
-                TotalReports  = totalReports,
+                TotalPatients  = totalPatients,
+                TotalReports   = totalReports,
                 PendingReports = pending
             };
         }
